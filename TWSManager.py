@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import pandas_datareader.data as web
 import time
 import talib
 import pytz
