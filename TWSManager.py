@@ -1,26 +1,20 @@
 import requests
 import pandas as pd
-import pandas_datareader.data as web
 import time
-import talib
 import pytz
 import datetime
-import os
-import ibapi
 from ib_insync import *
 
 # ib.connect('127.0.0.1', 7497, clientId=1)
-#
 # Uncomment next line when in a jupyter notebook
 # util.startLoop()
 
 
 class TWSManager:
-    def __init__(self, api_key, interval='1day', time_series='TIME_SERIES_DAILY'):
+
+    def __init__(self, alphavantage_api_key):
         self.ib = IB()
-        self.INTERVAL = interval
-        self.API_KEY = api_key
-        self.TIME_SERIES = time_series
+        self.AV_API_KEY = alphavantage_api_key
 
     def __del__(self):
         self.disconnect()
@@ -55,7 +49,7 @@ class TWSManager:
             print('Try to connect to TWS terminal...', end='')
             self.ib.connect('127.0.0.1', 7497, clientId=1)
             if self.ib.isConnected():
-                print('successful.')
+                print('successful.\n')
                 return True
         except Exception as ex:
             # Catch an exceptions
@@ -84,8 +78,6 @@ class TWSManager:
         date = today.strftime("%Y%m%d")
         time = today.strftime("%H%M")
         print('DateTime: ', today.strftime("%d-%m-%Y at %I:%M%p"), tz)
-
-        message = ''
 
         if hourslistopening[1] == 'CLOSED':
             message = 'close'
@@ -142,7 +134,7 @@ class TWSManager:
         :return: Time Zone
         """
 
-        url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&interval=1day&apikey={self.API_KEY}'
+        url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&interval=1day&apikey={self.AV_API_KEY}'
         r = requests.get(url)
         json_data = r.json()
         try:
@@ -162,41 +154,33 @@ class TWSManager:
         balance = balances.get('AvailableFunds', 0)
         return balance
 
-    def check_balance(self, ticker, count):
+    def check_balance(self, ticker, amount):
         """
         Check the available sum for buy specified ticker.
         :param ticker:
         :param count:
         :return:
         """
-        price = self.read_data(ticker)['close'].iloc[0]
-        amount = price * count
-        if self.balance() > amount:
+        df = self.read_data(ticker)
+        price = df['Close'].iloc[-1]
+        total_sum = price * amount
+
+        # print(f'Checking the possibility to buy {amount} lots of \'{ticker}\'...', end='')
+        if self.balance() > total_sum:
+            # print('the buy is possible.')
             return True
         else:
+            # print(f'money is NOT enough.')
             return False
 
-    def load_data(self, ticker):
+    def read_data(self, ticker, path='Data\\'):
         """
-        Download the data of ticker from 'https://www.alphavantage.co/' to file '\Data\{ticker}.csv'
-        :param ticker:
-        :return:
-        """
-        filename = f'Data\{ticker}.csv'
-        url = f'https://www.alphavantage.co/query?function={self.TIME_SERIES}&symbol={ticker}&interval={self.INTERVAL}&apikey={self.API_KEY}&datatype=csv&outputsize=compact'
-        r = requests.get(url)
-        content = r.content.decode('UTF-8')
-        with open(filename, "w") as file:
-            file.write(content)
-        print(f'\tUpdate {ticker} price history:', filename)
-
-    def read_data(self, ticker):
-        """
-        Read the stock data of ticker from file '\Data\{ticker}.csv'
+        Read the stock data of ticker from file '{path}{ticker}.csv'
+        :param path:
         :param ticker:
         :return: Pandas DataFrame with stock data of ticker
         """
-        df = pd.read_csv(f'\Data\{ticker}.csv')
+        df = pd.read_csv(f'{path}{ticker}.csv')
         # os.remove(f'\Data\{ticker}.csv')
         return df
 
@@ -238,4 +222,4 @@ class TWSManager:
 
             while self.ib.isConnected():  # wait while disconnecting
                 time.sleep(1)  # sleep 1 sec on waiting
-        print("Successful disconnected with TWS")
+        print("\nSuccessful disconnected with TWS")

@@ -3,5 +3,7 @@
 __pycache__/
 venv/
 Data/*
+Data/Api_keys.txt
 !/Data/SPY.csv
+!/Data/TickersList.csv
 
