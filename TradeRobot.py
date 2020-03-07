@@ -3,11 +3,17 @@ import StockDataReaders
 import datetime
 
 # Load api key for services
-with open('Data\\Api_keys.txt') as f:
-    api_keys = {}
-    for line in f:
-        key, value = line.split('=')
-        api_keys[key] = str(value).strip()
+try:
+    print('Load file with api keys...', end='')
+    with open('Data\\Api_keys.txt') as f:
+        api_keys = {}
+        for line in f:
+            key, value = line.split('=')
+            api_keys[key] = str(value).strip()
+    print('successful.')
+except FileNotFoundError:
+    print('file \'Data\\Api_keys.txt\' is not found. Api key set as default.')
+    api_keys['alphavantage_api_key'] = 'XXXXXXXXXXXXXXX'
 
 
 # av = StockDataReaders.AlphaVantageReader(api_keys['alphavantage_api_key'])
