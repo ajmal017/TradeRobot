@@ -15,15 +15,12 @@ except FileNotFoundError:
     print('file \'Data\\Api_keys.txt\' is not found. Api key set as default.')
     api_keys['alphavantage_api_key'] = 'XXXXXXXXXXXXXXX'
 
-
 # av = StockDataReaders.AlphaVantageReader(api_keys['alphavantage_api_key'])
 # av.load_data('SPY')
-
 
 # Update all tickers in 'TickersList.csv'
 dr = StockDataReaders.PandasDataReader()
 dr.update_tickers_by_list(filename='TickersList.csv', path='Data\\')
-
 
 # Connect to TWS terminal an check the balance
 myTWS = TWSManager.TWSManager(alphavantage_api_key=api_keys['alphavantage_api_key'])
