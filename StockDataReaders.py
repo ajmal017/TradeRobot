@@ -39,7 +39,7 @@ class PandasDataReader:
         :param path:
         :return:
         """
-        print(f'Load ticker \'{ticker}\'...', end='')
+        print(f'Load ticker \'{ticker}\'...\t', end='')
         df = web.DataReader(ticker, "yahoo", start=start, end=end)
         df.to_csv(f'{path}{ticker}.csv')
         print(f'successful. Saved into file \'{path}{ticker}.csv\'')
@@ -64,26 +64,32 @@ class PandasDataReader:
             print(f'Update ticker \'{ticker}\'...\t', end='')
 
             try:
-                # Load current data
+                # Load current data from {ticker}.csv file
                 ticker_df = pd.read_csv(f'{path}{ticker}.csv')
+
+                # Delete last record in data for renew it
+                ticker_df.drop(ticker_df.index[-1], inplace=True)
 
                 # Convert Date to DateTime format
                 ticker_df['Date'] = ticker_df['Date'].astype('datetime64[ns]')
 
                 # Set start and end date for update data
-                start = ticker_df['Date'].max().date() + datetime.timedelta(days=2)
+                start = ticker_df['Date'].max().date()
                 end = datetime.datetime.today().date()
 
                 # Check last date in data
-                if start > end:
-                    print(f'up to date.')
-                    continue
+                # if start > end:
+                #     print(f'up to date.')
+                #     continue
 
                 # Load new data
                 new_ticker_df = web.DataReader(ticker, "yahoo", start=start, end=end).reset_index()
 
+                # Looking for a first position in new data (Data from Yahoo has some overlays in start of period.)
+                idx = new_ticker_df[new_ticker_df['Date'].dt.date == start].index.tolist()[-1]
+
                 # Add new data to current data
-                ticker_df = ticker_df.append(new_ticker_df, ignore_index=True)
+                ticker_df = ticker_df.append(new_ticker_df.iloc[idx + 1:], ignore_index=True)
 
                 # Set Date column to index of DataFrame
                 ticker_df.set_index(['Date'], inplace=True)
@@ -91,7 +97,7 @@ class PandasDataReader:
                 # Save data
                 ticker_df.to_csv(f'{path}{ticker}.csv')
 
-                print(f'added {len(new_ticker_df.index)} new records.')
+                print(f'added {len(new_ticker_df.iloc[idx+1:].index)} records.')
 
             except FileNotFoundError:
                 print(f'data file not found. Try to ', end='')
